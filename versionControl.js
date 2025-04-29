@@ -3,6 +3,18 @@ document.addEventListener('DOMContentLoaded', function() {
     let versionHistory = [];
     let currentVersionIndex = -1;
     let isUndoOperation = false;
+    let imageCache = {};
+
+    // Load image cache from localStorage
+    try {
+        const savedImageCache = localStorage.getItem('skyePortfolioImageCache');
+        if (savedImageCache) {
+            imageCache = JSON.parse(savedImageCache);
+            applyImageCache();
+        }
+    } catch (e) {
+        console.warn('Failed to load image cache from localStorage:', e);
+    }
 
     const username = 'Mathew-Harvey';
     const repo = 'SkyePortfolio';
@@ -226,6 +238,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         
         setupDragAndDrop();
+        setupImageClickHandlers();
         
         commitBtn.style.display = 'block';
         undoBtn.style.display = 'block';
@@ -265,6 +278,112 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log('Drag and drop handlers initialized');
     }
     
+    function setupImageClickHandlers() {
+        const profilePicContainer = document.getElementById('profile-pic-container');
+        const profilePic = document.getElementById('profile-pic');
+        
+        profilePicContainer.addEventListener('click', function() {
+            if (isLoggedIn) {
+                showImageUploadDialog(profilePic);
+            }
+        });
+        
+        const projectImgContainers = document.querySelectorAll('.project-img-container');
+        projectImgContainers.forEach(container => {
+            container.addEventListener('click', function() {
+                if (isLoggedIn) {
+                    const img = container.querySelector('.project-img');
+                    showImageUploadDialog(img);
+                }
+            });
+        });
+        
+        console.log('Image click handlers initialized');
+    }
+    
+    function showImageUploadDialog(imgElement) {
+        const fileInput = document.createElement('input');
+        fileInput.type = 'file';
+        fileInput.accept = 'image/*';
+        
+        fileInput.onchange = function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            handleImageFile(file, imgElement);
+        };
+        
+        fileInput.click();
+    }
+    
+    function handleImageFile(file, imgElement) {
+        if (!file || !file.type.match('image.*')) {
+            alert('Please select a valid image file');
+            return;
+        }
+        
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            const imageId = generateImageId(imgElement);
+            imgElement.src = event.target.result;
+            imgElement.dataset.pendingUpload = 'true';
+            imgElement.dataset.imageId = imageId;
+            
+            // Save image to local storage
+            imageCache[imageId] = {
+                dataUrl: event.target.result,
+                originalName: file.name,
+                type: file.type,
+                timestamp: new Date().toISOString()
+            };
+            
+            saveImageCache();
+            console.log(`Image stored in local cache: ${imageId}`);
+        };
+        
+        reader.readAsDataURL(file);
+    }
+    
+    function generateImageId(imgElement) {
+        const path = getImageElementPath(imgElement);
+        return `img_${path}_${Date.now()}`;
+    }
+    
+    function getImageElementPath(imgElement) {
+        if (imgElement.id === 'profile-pic') {
+            return 'profile';
+        }
+        
+        const projectContainer = imgElement.closest('.project');
+        if (projectContainer) {
+            const projectIndex = Array.from(document.querySelectorAll('.project')).indexOf(projectContainer);
+            return `project_${projectIndex}`;
+        }
+        
+        return `unknown_${Math.random().toString(36).substring(2, 10)}`;
+    }
+    
+    function saveImageCache() {
+        try {
+            localStorage.setItem('skyePortfolioImageCache', JSON.stringify(imageCache));
+        } catch (e) {
+            console.warn('Failed to save image cache to localStorage:', e);
+        }
+    }
+    
+    function applyImageCache() {
+        const images = document.querySelectorAll('img');
+        images.forEach(img => {
+            const imageId = img.dataset.imageId;
+            if (imageId && imageCache[imageId]) {
+                img.src = imageCache[imageId].dataUrl;
+                img.dataset.pendingUpload = 'true';
+            }
+        });
+        
+        console.log('Applied image cache from local storage');
+    }
+    
     function handleDragOver(e) {
         e.preventDefault();
         e.dataTransfer.dropEffect = 'copy';
@@ -281,12 +400,7 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         
-        const reader = new FileReader();
-        reader.onload = function(event) {
-            imgElement.src = event.target.result;
-            console.log('Image replaced via drag and drop');
-        };
-        reader.readAsDataURL(file);
+        handleImageFile(file, imgElement);
     }
 
     async function undoChanges() {
@@ -381,9 +495,22 @@ document.addEventListener('DOMContentLoaded', function() {
             commitBtn.textContent = 'Committing...';
             commitBtn.disabled = true;
             
+            // First, make sure the images directory exists
+            await createImagesDirectory();
+            
+            // Then upload pending images
+            const imagesToUpload = findPendingImageUploads();
+            const uploadedImagePaths = await uploadPendingImages(imagesToUpload);
+            
+            // Update HTML with new image paths
+            updateHtmlImageReferences(imagesToUpload, uploadedImagePaths);
+            
             const currentHTML = document.documentElement.outerHTML;
             
             await uploadAllFiles(currentHTML);
+            
+            // Clear pending uploads after successful commit
+            clearPendingUploads(imagesToUpload);
             
             commitBtn.textContent = 'Commit Changes';
             commitBtn.disabled = false;
@@ -398,6 +525,115 @@ document.addEventListener('DOMContentLoaded', function() {
             commitBtn.disabled = false;
             alert('Error committing changes: ' + error.message);
         }
+    }
+    
+    async function createImagesDirectory() {
+        try {
+            // Check if images directory exists
+            const dirResponse = await fetch(`https://api.github.com/repos/${username}/${repo}/contents/images`, {
+                headers: {
+                    'Authorization': generateAuthHeader(),
+                    'Accept': 'application/vnd.github.v3+json'
+                }
+            });
+            
+            if (dirResponse.ok) {
+                return true; // Directory exists
+            }
+            
+            // Create a .gitkeep file to create the directory
+            const response = await fetch(`https://api.github.com/repos/${username}/${repo}/contents/images/.gitkeep`, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': generateAuthHeader(),
+                    'Accept': 'application/vnd.github.v3+json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    message: 'Create images directory',
+                    content: btoa(''),
+                    branch: 'main'
+                })
+            });
+            
+            return response.ok;
+        } catch (e) {
+            console.warn('Error creating images directory:', e);
+            throw new Error('Failed to create images directory');
+        }
+    }
+    
+    function findPendingImageUploads() {
+        const pendingImages = [];
+        const images = document.querySelectorAll('img[data-pending-upload="true"]');
+        
+        images.forEach(img => {
+            if (img.dataset.imageId && imageCache[img.dataset.imageId]) {
+                pendingImages.push({
+                    element: img,
+                    imageId: img.dataset.imageId,
+                    data: imageCache[img.dataset.imageId]
+                });
+            }
+        });
+        
+        return pendingImages;
+    }
+    
+    async function uploadPendingImages(pendingImages) {
+        const uploadedPaths = {};
+        
+        for (const img of pendingImages) {
+            try {
+                const fileName = generateUniqueFileName(img.data.originalName);
+                const filePath = `images/${fileName}`;
+                
+                // Convert dataURL to base64 content
+                let dataUrl = img.data.dataUrl;
+                let base64Content = dataUrl.split(',')[1];
+                
+                const uploadResult = await uploadFile(filePath, null, `Upload image: ${fileName}`, base64Content);
+                
+                uploadedPaths[img.imageId] = {
+                    path: filePath,
+                    url: uploadResult.content.download_url
+                };
+                
+                console.log(`Uploaded image: ${filePath}`);
+                
+            } catch (error) {
+                console.error(`Failed to upload image ${img.imageId}:`, error);
+                throw new Error(`Failed to upload image: ${error.message}`);
+            }
+        }
+        
+        return uploadedPaths;
+    }
+    
+    function generateUniqueFileName(originalName) {
+        const timestamp = Date.now();
+        const extension = originalName.split('.').pop();
+        const baseName = originalName.split('.').slice(0, -1).join('.');
+        const sanitizedBaseName = baseName.replace(/[^a-zA-Z0-9-_]/g, '-');
+        
+        return `${sanitizedBaseName}-${timestamp}.${extension}`;
+    }
+    
+    function updateHtmlImageReferences(pendingImages, uploadedPaths) {
+        pendingImages.forEach(img => {
+            if (uploadedPaths[img.imageId]) {
+                img.element.src = uploadedPaths[img.imageId].url;
+                img.element.removeAttribute('data-pending-upload');
+            }
+        });
+    }
+    
+    function clearPendingUploads(uploadedImages) {
+        uploadedImages.forEach(img => {
+            delete imageCache[img.imageId];
+        });
+        
+        saveImageCache();
     }
     
     function logout() {
@@ -467,7 +703,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    async function uploadFile(path, content, message) {
+    async function uploadFile(path, content, message, base64Content = null) {
         let fileSha = null;
         
         try {
@@ -488,7 +724,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         const body = {
             message: message,
-            content: btoa(unescape(encodeURIComponent(content))),
+            content: base64Content || btoa(unescape(encodeURIComponent(content))),
             branch: 'main'
         };
         
