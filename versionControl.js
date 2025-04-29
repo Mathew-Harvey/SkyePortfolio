@@ -5,6 +5,23 @@ document.addEventListener('DOMContentLoaded', function() {
     let isUndoOperation = false;
     let imageCache = {};
 
+    // Check for undo/redo session state
+    const sessionStateStr = sessionStorage.getItem('skyePortfolioState');
+    if (sessionStateStr) {
+        try {
+            const sessionState = JSON.parse(sessionStateStr);
+            if (sessionState.isLoggedIn) {
+                isLoggedIn = true;
+                currentVersionIndex = sessionState.currentVersionIndex || -1;
+                isUndoOperation = sessionState.isUndoOperation || false;
+            }
+            // Clear the session storage to prevent infinite loops
+            sessionStorage.removeItem('skyePortfolioState');
+        } catch (e) {
+            console.warn('Failed to parse session state:', e);
+        }
+    }
+
     // Load image cache from localStorage
     try {
         const savedImageCache = localStorage.getItem('skyePortfolioImageCache');
@@ -173,19 +190,31 @@ document.addEventListener('DOMContentLoaded', function() {
         return prefix + separator + getAuth();
     }
 
+    // Safely get elements, avoiding null reference errors
     const loginBtn = document.getElementById('login-btn');
     const saveBtn = document.getElementById('save-btn');
     const logoutBtn = document.getElementById('logout-btn');
     const undoBtn = document.getElementById('undo-btn');
     const redoBtn = document.getElementById('redo-btn');
     
-    loginBtn.addEventListener('click', login);
-    saveBtn.addEventListener('click', saveChanges);
-    logoutBtn.addEventListener('click', logout);
-    undoBtn.addEventListener('click', undoChanges);
-    redoBtn.addEventListener('click', redoChanges);
+    // Only attach event listeners if elements exist
+    if (loginBtn) loginBtn.addEventListener('click', login);
+    if (saveBtn) saveBtn.addEventListener('click', saveChanges);
+    if (logoutBtn) logoutBtn.addEventListener('click', logout);
+    if (undoBtn) undoBtn.addEventListener('click', undoChanges);
+    if (redoBtn) redoBtn.addEventListener('click', redoChanges);
 
-    initVersionHistory();
+    // Initialize the app
+    init();
+
+    async function init() {
+        await initVersionHistory();
+        
+        if (isLoggedIn) {
+            console.log('Restoring logged in state after page reload');
+            enterEditMode();
+        }
+    }
 
     async function initVersionHistory() {
         try {
@@ -242,20 +271,28 @@ document.addEventListener('DOMContentLoaded', function() {
         setupDragAndDrop();
         setupImageClickHandlers();
         
-        saveBtn.style.display = 'block';
-        logoutBtn.style.display = 'block';
-        undoBtn.style.display = 'block';
-        redoBtn.style.display = 'block';
+        // Safely update UI elements
+        if (saveBtn) saveBtn.style.display = 'block';
+        if (logoutBtn) logoutBtn.style.display = 'block';
+        if (undoBtn) undoBtn.style.display = 'block';
+        if (redoBtn) redoBtn.style.display = 'block';
         
         updateUndoRedoButtons();
         
-        loginBtn.textContent = 'Logged In';
-        loginBtn.disabled = true;
+        if (loginBtn) {
+            loginBtn.textContent = 'Logged In';
+            loginBtn.disabled = true;
+        }
         
         console.log('Entered edit mode');
     }
 
     function updateUndoRedoButtons() {
+        if (!undoBtn || !redoBtn) {
+            console.warn('Undo/Redo buttons not found in the DOM');
+            return;
+        }
+        
         if (versionHistory.length === 0) {
             undoBtn.disabled = true;
             redoBtn.disabled = true;
@@ -272,18 +309,22 @@ document.addEventListener('DOMContentLoaded', function() {
         const profilePicContainer = document.getElementById('profile-pic-container');
         const profilePic = document.getElementById('profile-pic');
         
-        profilePicContainer.addEventListener('dragover', handleDragOver);
-        profilePicContainer.addEventListener('drop', function(e) {
-            handleImageDrop(e, profilePic);
-        });
+        if (profilePicContainer && profilePic) {
+            profilePicContainer.addEventListener('dragover', handleDragOver);
+            profilePicContainer.addEventListener('drop', function(e) {
+                handleImageDrop(e, profilePic);
+            });
+        }
         
         const projectImgContainers = document.querySelectorAll('.project-img-container');
         projectImgContainers.forEach(container => {
-            container.addEventListener('dragover', handleDragOver);
-            container.addEventListener('drop', function(e) {
-                const img = container.querySelector('.project-img');
-                handleImageDrop(e, img);
-            });
+            const img = container.querySelector('.project-img');
+            if (img) {
+                container.addEventListener('dragover', handleDragOver);
+                container.addEventListener('drop', function(e) {
+                    handleImageDrop(e, img);
+                });
+            }
         });
         
         console.log('Drag and drop handlers initialized');
@@ -293,24 +334,28 @@ document.addEventListener('DOMContentLoaded', function() {
         const profilePicContainer = document.getElementById('profile-pic-container');
         const profilePic = document.getElementById('profile-pic');
         
-        profilePicContainer.addEventListener('click', function(e) {
-            if (isLoggedIn) {
-                e.preventDefault();
-                e.stopPropagation();
-                showImageUploadDialog(profilePic);
-            }
-        });
-        
-        const projectImgContainers = document.querySelectorAll('.project-img-container');
-        projectImgContainers.forEach(container => {
-            container.addEventListener('click', function(e) {
+        if (profilePicContainer && profilePic) {
+            profilePicContainer.addEventListener('click', function(e) {
                 if (isLoggedIn) {
                     e.preventDefault();
                     e.stopPropagation();
-                    const img = container.querySelector('.project-img');
-                    showImageUploadDialog(img);
+                    showImageUploadDialog(profilePic);
                 }
             });
+        }
+        
+        const projectImgContainers = document.querySelectorAll('.project-img-container');
+        projectImgContainers.forEach(container => {
+            const img = container.querySelector('.project-img');
+            if (img) {
+                container.addEventListener('click', function(e) {
+                    if (isLoggedIn) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        showImageUploadDialog(img);
+                    }
+                });
+            }
         });
         
         console.log('Image click handlers initialized');
@@ -330,13 +375,17 @@ document.addEventListener('DOMContentLoaded', function() {
                 handleImageFile(file, imgElement);
             }
             // Remove the file input after selection
-            document.body.removeChild(fileInput);
+            if (document.body.contains(fileInput)) {
+                document.body.removeChild(fileInput);
+            }
         };
         
         // Handle cancel case
-        fileInput.oncancel = function() {
-            document.body.removeChild(fileInput);
-        };
+        fileInput.addEventListener('cancel', function() {
+            if (document.body.contains(fileInput)) {
+                document.body.removeChild(fileInput);
+            }
+        });
         
         // Add cleanup listener to ensure it's removed
         window.setTimeout(() => {
@@ -467,8 +516,10 @@ document.addEventListener('DOMContentLoaded', function() {
             
             console.log(`Undoing to version index ${currentVersionIndex} of ${versionHistory.length - 1}`);
             
-            undoBtn.textContent = 'Loading...';
-            undoBtn.disabled = true;
+            if (undoBtn) {
+                undoBtn.textContent = 'Loading...';
+                undoBtn.disabled = true;
+            }
             
             // Try to load the version content
             const contentResponse = await fetch(versionToLoad.download_url);
@@ -490,6 +541,13 @@ document.addEventListener('DOMContentLoaded', function() {
             
             isUndoOperation = true;
             
+            // Save state to session storage before reload
+            sessionStorage.setItem('skyePortfolioState', JSON.stringify({
+                isLoggedIn: true,
+                currentVersionIndex: currentVersionIndex,
+                isUndoOperation: true
+            }));
+            
             // Replace page content with the loaded version
             document.open();
             document.write(versionContent);
@@ -501,8 +559,10 @@ document.addEventListener('DOMContentLoaded', function() {
             console.error('Error during undo operation:', error);
             alert(`Undo failed: ${error.message}`);
             
-            undoBtn.textContent = 'Undo';
-            undoBtn.disabled = false;
+            if (undoBtn) {
+                undoBtn.textContent = 'Undo';
+                undoBtn.disabled = false;
+            }
             updateUndoRedoButtons();
         }
     }
@@ -529,8 +589,10 @@ document.addEventListener('DOMContentLoaded', function() {
             
             console.log(`Redoing to version index ${currentVersionIndex} of ${versionHistory.length - 1}`);
             
-            redoBtn.textContent = 'Loading...';
-            redoBtn.disabled = true;
+            if (redoBtn) {
+                redoBtn.textContent = 'Loading...';
+                redoBtn.disabled = true;
+            }
             
             // Try to load the version content
             const contentResponse = await fetch(versionToLoad.download_url);
@@ -539,6 +601,13 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             
             const versionContent = await contentResponse.text();
+            
+            // Save state to session storage before reload
+            sessionStorage.setItem('skyePortfolioState', JSON.stringify({
+                isLoggedIn: true,
+                currentVersionIndex: currentVersionIndex,
+                isUndoOperation: true
+            }));
             
             // Replace page content with the loaded version
             document.open();
@@ -551,8 +620,10 @@ document.addEventListener('DOMContentLoaded', function() {
             console.error('Error during redo operation:', error);
             alert(`Redo failed: ${error.message}`);
             
-            redoBtn.textContent = 'Redo';
-            redoBtn.disabled = false;
+            if (redoBtn) {
+                redoBtn.textContent = 'Redo';
+                redoBtn.disabled = false;
+            }
             updateUndoRedoButtons();
         }
     }
@@ -561,8 +632,10 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!isLoggedIn) return;
         
         try {
-            saveBtn.textContent = 'Saving...';
-            saveBtn.disabled = true;
+            if (saveBtn) {
+                saveBtn.textContent = 'Saving...';
+                saveBtn.disabled = true;
+            }
             
             // First, make sure the images directory exists
             await createImagesDirectory();
@@ -585,15 +658,19 @@ document.addEventListener('DOMContentLoaded', function() {
             currentVersionIndex = 0;
             updateUndoRedoButtons();
             
-            saveBtn.textContent = 'Save Changes';
-            saveBtn.disabled = false;
+            if (saveBtn) {
+                saveBtn.textContent = 'Save Changes';
+                saveBtn.disabled = false;
+            }
             alert('Changes saved successfully!');
             
         } catch (error) {
             console.error('Error saving changes:', error);
             
-            saveBtn.textContent = 'Save Changes';
-            saveBtn.disabled = false;
+            if (saveBtn) {
+                saveBtn.textContent = 'Save Changes';
+                saveBtn.disabled = false;
+            }
             alert('Error saving changes: ' + error.message);
         }
     }
@@ -665,12 +742,18 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 const uploadResult = await uploadFile(filePath, null, `Upload image: ${fileName}`, base64Content);
                 
-                uploadedPaths[img.imageId] = {
-                    path: filePath,
-                    url: uploadResult.content.download_url
-                };
-                
-                console.log(`Uploaded image: ${filePath}`);
+                // Check if the upload result contains valid content
+                if (uploadResult && uploadResult.content && uploadResult.content.download_url) {
+                    uploadedPaths[img.imageId] = {
+                        path: filePath,
+                        url: uploadResult.content.download_url
+                    };
+                    
+                    console.log(`Uploaded image: ${filePath}`);
+                } else {
+                    console.warn('Upload succeeded but returned unexpected result:', uploadResult);
+                    throw new Error('Upload returned invalid content structure');
+                }
                 
             } catch (error) {
                 console.error(`Failed to upload image ${img.imageId}:`, error);
@@ -683,9 +766,9 @@ document.addEventListener('DOMContentLoaded', function() {
     
     function generateUniqueFileName(originalName) {
         const timestamp = Date.now();
-        const extension = originalName.split('.').pop();
+        const extension = originalName.split('.').pop() || 'jpg'; // Default to jpg if no extension
         const baseName = originalName.split('.').slice(0, -1).join('.');
-        const sanitizedBaseName = baseName.replace(/[^a-zA-Z0-9-_]/g, '-');
+        const sanitizedBaseName = (baseName || 'image').replace(/[^a-zA-Z0-9-_]/g, '-');
         
         return `${sanitizedBaseName}-${timestamp}.${extension}`;
     }
@@ -695,6 +778,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (uploadedPaths[img.imageId]) {
                 img.element.src = uploadedPaths[img.imageId].url;
                 img.element.removeAttribute('data-pending-upload');
+                img.element.removeAttribute('data-image-id');
             }
         });
     }
@@ -715,13 +799,15 @@ document.addEventListener('DOMContentLoaded', function() {
             el.removeAttribute('contenteditable');
         });
         
-        saveBtn.style.display = 'none';
-        logoutBtn.style.display = 'none';
-        undoBtn.style.display = 'none';
-        redoBtn.style.display = 'none';
+        if (saveBtn) saveBtn.style.display = 'none';
+        if (logoutBtn) logoutBtn.style.display = 'none';
+        if (undoBtn) undoBtn.style.display = 'none';
+        if (redoBtn) redoBtn.style.display = 'none';
         
-        loginBtn.textContent = "Skye's Login";
-        loginBtn.disabled = false;
+        if (loginBtn) {
+            loginBtn.textContent = "Skye's Login";
+            loginBtn.disabled = false;
+        }
         
         isLoggedIn = false;
         
@@ -747,7 +833,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     currentIndexContent = atob(indexData.content);
                     
                     const backupFileName = `indexOLD_${formattedTimestamp}.html`;
-                    await uploadFile(backupFileName, currentIndexContent, `Backup of index.html at ${timestamp}`);
+                    const backupResult = await uploadFile(backupFileName, currentIndexContent, `Backup of index.html at ${timestamp}`);
                     console.log(`Created backup file: ${backupFileName}`);
                 }
             } catch (e) {
@@ -788,8 +874,14 @@ document.addEventListener('DOMContentLoaded', function() {
             });
             
             if (fileResponse.ok) {
-                const fileData = await fileResponse.json();
-                fileSha = fileData.sha;
+                try {
+                    const fileData = await fileResponse.json();
+                    if (fileData && fileData.sha) {
+                        fileSha = fileData.sha;
+                    }
+                } catch (e) {
+                    console.warn(`Could not parse JSON response for ${path}:`, e);
+                }
             }
         } catch (e) {
             console.warn(`Could not check for existing file ${path}:`, e);
@@ -797,7 +889,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         const body = {
             message: message,
-            content: base64Content || btoa(unescape(encodeURIComponent(content))),
+            content: base64Content || btoa(unescape(encodeURIComponent(content || ''))),
             branch: 'main'
         };
         
@@ -805,22 +897,28 @@ document.addEventListener('DOMContentLoaded', function() {
             body.sha = fileSha;
         }
         
-        const uploadResponse = await fetch(`https://api.github.com/repos/${username}/${repo}/contents/${path}`, {
-            method: 'PUT',
-            headers: {
-                'Authorization': generateAuthHeader(),
-                'Accept': 'application/vnd.github.v3+json',
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(body)
-        });
-        
-        if (!uploadResponse.ok) {
-            const errorData = await uploadResponse.json();
-            throw new Error(`Upload failed for ${path}: ${uploadResponse.statusText} - ${JSON.stringify(errorData)}`);
+        try {
+            const uploadResponse = await fetch(`https://api.github.com/repos/${username}/${repo}/contents/${path}`, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': generateAuthHeader(),
+                    'Accept': 'application/vnd.github.v3+json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(body)
+            });
+            
+            if (!uploadResponse.ok) {
+                const errorText = await uploadResponse.text();
+                console.error(`Upload failed for ${path}:`, uploadResponse.status, errorText);
+                throw new Error(`Upload failed for ${path}: ${uploadResponse.statusText}`);
+            }
+            
+            return await uploadResponse.json();
+        } catch (e) {
+            console.error(`Error during upload of ${path}:`, e);
+            throw new Error(`Failed to upload ${path}: ${e.message}`);
         }
-        
-        return await uploadResponse.json();
     }
     
     async function fetchFileContent(url) {
