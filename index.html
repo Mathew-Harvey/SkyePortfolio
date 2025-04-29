@@ -3,110 +3,207 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Skye Harvey - Digital Project Manager | Mid-Century Modern Portfolio</title>
+    <title>Skye Harvey - Digital Project Manager | Award-Winning MCM Portfolio Concept</title>
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&family=Lato:wght@400;700&display=swap" rel="stylesheet">
     <!-- Stylesheet -->
     <link rel="stylesheet" href="style.css">
-    <!-- Defer JS loading -->
+    <!-- Defer JS loading (Needed for scroll animations & editor) -->
+    <script src="script.js" defer></script> <!-- Renamed for clarity -->
     <script src="versionControl.js" defer></script>
 </head>
-<body>
+<body class="preload"> <!-- Start with preload class -->
 
-    <div class="container">
+    <!-- Preloader -->
+    <div class="preloader">
+        <div class="preloader-icon"></div>
+    </div>
 
-        <header class="site-header">
-            <div class="logo editable" id="name-section"> <!-- Retained ID for JS -->
-                <span class="logo-main">Skye Harvey</span>
-                <span class="logo-sub">Digital Project Manager</span>
-            </div>
-            <div class="header-buttons buttons"> <!-- Retained class for JS button container -->
-                <button id="login-btn">Skye's Login</button>
-                <button id="save-btn" style="display: none;">Save</button>
-                <button id="logout-btn" style="display: none;">Logout</button>
-                <button id="undo-btn" style="display: none;">Undo</button>
-                <button id="redo-btn" style="display: none;">Redo</button>
+    <div class="container site-wrapper">
+
+        <header class="site-header reveal fade-in">
+            <div class="header-content">
+                <div class="logo editable" id="name-section">
+                    <a href="#" class="logo-link">
+                        <span class="logo-main">Skye Harvey</span>
+                        <span class="logo-sub">Digital Project Manager</span>
+                    </a>
+                </div>
+                <nav class="main-navigation" aria-label="Main Navigation">
+                    <ul>
+                        <li><a href="#hero-about">About</a></li>
+                        <li><a href="#portfolio">Portfolio</a></li>
+                        <li><a href="#contact">Contact</a></li>
+                    </ul>
+                </nav>
+                <div class="header-buttons buttons">
+                    <button id="login-btn" class="btn btn-primary">Skye's Login</button>
+                    <button id="save-btn" class="btn btn-primary" style="display: none;">Save</button>
+                    <button id="logout-btn" class="btn btn-secondary" style="display: none;">Logout</button>
+                    <button id="undo-btn" class="btn btn-secondary" style="display: none;">Undo</button>
+                    <button id="redo-btn" class="btn btn-secondary" style="display: none;">Redo</button>
+                </div>
+                <button class="mobile-nav-toggle" aria-label="Toggle Navigation" aria-expanded="false">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
             </div>
         </header>
 
-        <main>
-            <section id="hero-about" class="hero-about-section">
-                <div class="hero-content">
-                    <h1 class="editable" id="hero-headline"> <!-- Added specific ID -->
-                        Delivering Digital Excellence,<br> One Project at a Time.
-                    </h1>
-                    <div class="about-text editable" id="about-content"> <!-- Retained ID for JS -->
-                        <p>Hello! I'm Skye Harvey. With a keen eye for detail and a passion for efficient workflows, I manage digital projects from concept to launch, ensuring they meet strategic goals on time and within budget.</p>
-                        <p>My expertise lies in bridging the gap between creative vision and technical execution, fostering collaboration within cross-functional teams.</p>
+        <main id="main-content">
+
+            <section id="hero-about" class="hero-about-section section-padding">
+                <div class="hero-layout">
+                    <div class="hero-content reveal fade-in-up" data-delay="100">
+                        <div id="hero-text-wrapper" class="editable"> <!-- Wrapper for potential text edits -->
+                             <h1 id="hero-headline" class="hero-headline">
+                                <span class="line">Delivering Digital</span>
+                                <span class="line">Excellence, Project</span>
+                                <span class="line">by Project.</span>
+                            </h1>
+                            <div class="about-text" id="about-content">
+                                <p>Hello! I'm Skye Harvey. With a keen eye for detail and a passion for efficient workflows, I manage digital projects from concept to launch, ensuring they meet strategic goals on time and within budget.</p>
+                                <p>My expertise lies in bridging the gap between creative vision and technical execution, fostering collaboration within cross-functional teams.</p>
+                            </div>
+                        </div>
+                         <a href="#portfolio" class="btn btn-secondary hero-cta reveal fade-in-up" data-delay="300">View My Work</a>
+                    </div>
+                    <div class="profile-image-area reveal scale-in" data-delay="200">
+                        <div class="profile-image-wrapper" id="profile-pic-container">
+                            <div class="profile-image-bg-shape"></div>
+                            <img id="profile-pic" src="https://placehold.co/450x450/E87A00/F8F5F2?text=SH" alt="Skye Harvey - Profile Picture">
+                        </div>
                     </div>
                 </div>
-                <div class="profile-image-wrapper" id="profile-pic-container"> <!-- Retained ID for JS -->
-                    <img id="profile-pic" src="https://placehold.co/400x400/E87A00/F8F5F2?text=SH" alt="Skye Harvey - Profile Picture">
-                     <!-- Placeholder Suggestion: Use a professional photo with a simple background, maybe slightly desaturated or with warm tones -->
-                </div>
             </section>
 
-            <section id="portfolio" class="portfolio-section">
-                <h2 class="section-title">Selected Projects</h2>
+            <section id="portfolio" class="portfolio-section section-padding">
+                <div class="section-header reveal fade-in">
+                    <h2 class="section-title">Selected Projects</h2>
+                    <p class="section-subtitle">A glimpse into recent digital management successes.</p>
+                </div>
                 <div class="projects-grid">
-                    <article class="project">
-                        <div class="project-img-container">
-                            <img class="project-img" src="https://placehold.co/600x400/008080/F8F5F2?text=Project+1" alt="Project 1 Visual" loading="lazy">
-                             <!-- Placeholder Suggestion: Clean screenshot or mock-up. Use geometric shapes or MCM patterns subtly if illustrating concept work -->
-                        </div>
-                        <div class="project-details editable"> <!-- Retained class for JS -->
-                            <h3>Client Transformation Initiative</h3>
-                            <p>Led a digital transformation project that streamlined user workflows and improved overall customer engagement metrics by 45%.</p>
-                        </div>
+                    <!-- Project 1 -->
+                    <article class="project reveal fade-in-up" data-delay="100">
+                        <figure class="project-figure">
+                             <div class="project-img-container">
+                                 <a href="#project-detail-1" class="project-img-link" aria-label="View details for Client Transformation Initiative">
+                                     <img class="project-img" src="https://placehold.co/600x450/008080/F8F5F2?text=Project+1" alt="Visual for Client Transformation Initiative" loading="lazy">
+                                     <div class="project-img-overlay"><span>View Project</span></div>
+                                 </a>
+                            </div>
+                            <figcaption class="project-details editable">
+                                <h3>Client Transformation Initiative</h3>
+                                <p>Led a digital transformation project that streamlined user workflows and improved overall customer engagement metrics by 45%.</p>
+                                <div class="project-tags">
+                                    <span class="tag">UX Strategy</span>
+                                    <span class="tag">Agile PM</span>
+                                    <span class="tag">Analytics</span>
+                                </div>
+                            </figcaption>
+                        </figure>
                     </article>
-                    <article class="project">
-                        <div class="project-img-container">
-                            <img class="project-img" src="https://placehold.co/600x400/A0522D/F8F5F2?text=Project+2" alt="Project 2 Visual" loading="lazy">
-                             <!-- Placeholder Suggestion: E-commerce interface mock-up, focus on clean UI elements -->
-                        </div>
-                        <div class="project-details editable">
-                            <h3>E-commerce Platform Redesign</h3>
-                            <p>Managed the redesign of a major e-commerce platform, resulting in a cleaner interface and a 30% boost in conversion rates post-launch.</p>
-                        </div>
+                     <!-- Project 2 -->
+                    <article class="project reveal fade-in-up" data-delay="200">
+                         <figure class="project-figure">
+                            <div class="project-img-container">
+                                 <a href="#project-detail-2" class="project-img-link" aria-label="View details for E-commerce Platform Redesign">
+                                     <img class="project-img" src="https://placehold.co/600x450/A0522D/F8F5F2?text=Project+2" alt="Visual for E-commerce Platform Redesign" loading="lazy">
+                                     <div class="project-img-overlay"><span>View Project</span></div>
+                                 </a>
+                            </div>
+                            <figcaption class="project-details editable">
+                                <h3>E-commerce Platform Redesign</h3>
+                                <p>Managed the redesign of a major e-commerce platform, resulting in a cleaner interface and a 30% boost in conversion rates post-launch.</p>
+                                 <div class="project-tags">
+                                    <span class="tag">E-commerce</span>
+                                    <span class="tag">UI/UX</span>
+                                    <span class="tag">Conversion Optimization</span>
+                                </div>
+                            </figcaption>
+                        </figure>
                     </article>
-                    <article class="project">
-                        <div class="project-img-container">
-                            <img class="project-img" src="https://placehold.co/600x400/333333/F8F5F2?text=Project+3" alt="Project 3 Visual" loading="lazy">
-                             <!-- Placeholder Suggestion: Mobile app screens in a clean presentation -->
-                        </div>
-                        <div class="project-details editable">
-                            <h3>Mobile App Launch Success</h3>
-                            <p>Oversaw the development and launch strategy for a new mobile application, achieving 100,000 downloads within the first month.</p>
-                        </div>
+                     <!-- Project 3 -->
+                    <article class="project reveal fade-in-up" data-delay="300">
+                        <figure class="project-figure">
+                             <div class="project-img-container">
+                                 <a href="#project-detail-3" class="project-img-link" aria-label="View details for Mobile App Launch Success">
+                                     <img class="project-img" src="https://placehold.co/600x450/333333/F8F5F2?text=Project+3" alt="Visual for Mobile App Launch Success" loading="lazy">
+                                     <div class="project-img-overlay"><span>View Project</span></div>
+                                 </a>
+                            </div>
+                            <figcaption class="project-details editable">
+                                <h3>Mobile App Launch Success</h3>
+                                <p>Oversaw the development and launch strategy for a new mobile application, achieving 100,000 downloads within the first month.</p>
+                                 <div class="project-tags">
+                                    <span class="tag">Mobile App Dev</span>
+                                    <span class="tag">Product Launch</span>
+                                    <span class="tag">Marketing Strategy</span>
+                                </div>
+                            </figcaption>
+                        </figure>
                     </article>
-                     <!-- Add more projects as needed -->
+                    <!-- Add more projects as needed, incrementing data-delay -->
                 </div>
             </section>
 
-            <section id="contact" class="contact-section">
-                <h2 class="section-title">Get In Touch</h2>
-                <div class="contact-details editable" id="contact-content"> <!-- Retained ID for JS -->
-                    <p>Interested in collaborating or learning more? Let's connect.</p>
-                    <p><span class="contact-label">Email:</span> <a href="mailto:skye.harvey@example.com">skye.harvey@example.com</a></p>
-                    <p><span class="contact-label">LinkedIn:</span> <a href="https://linkedin.com/in/skyeharvey" target="_blank" rel="noopener noreferrer">linkedin.com/in/skyeharvey</a></p>
-                    <p><span class="contact-label">Phone:</span> <a href="tel:+15551234567">(555) 123-4567</a></p>
+            <section id="contact" class="contact-section section-padding-large has-background-accent">
+                 <div class="section-header reveal fade-in">
+                    <h2 class="section-title light-text">Let's Connect</h2>
+                    <p class="section-subtitle light-text">Interested in collaborating or have a question? Reach out!</p>
                 </div>
+                <div class="contact-content-wrapper reveal fade-in-up" data-delay="100">
+                    <div class="contact-details editable" id="contact-content">
+                        <div class="contact-item">
+                             <span class="contact-icon email-icon"></span> <!-- Placeholder for SVG Icon -->
+                             <span class="contact-label">Email</span>
+                             <a href="mailto:skye.harvey@example.com" class="contact-link">skye.harvey@example.com</a>
+                        </div>
+                         <div class="contact-item">
+                             <span class="contact-icon linkedin-icon"></span> <!-- Placeholder for SVG Icon -->
+                             <span class="contact-label">LinkedIn</span>
+                             <a href="https://linkedin.com/in/skyeharvey" target="_blank" rel="noopener noreferrer" class="contact-link">linkedin.com/in/skyeharvey</a>
+                        </div>
+                         <div class="contact-item">
+                             <span class="contact-icon phone-icon"></span> <!-- Placeholder for SVG Icon -->
+                             <span class="contact-label">Phone</span>
+                             <a href="tel:+15551234567" class="contact-link">(555) 123-4567</a>
+                        </div>
+                    </div>
+                     <a href="mailto:skye.harvey@example.com" class="btn btn-primary contact-cta">Send an Email</a>
+                 </div>
             </section>
+
         </main>
 
-        <footer class="site-footer-bottom">
-            <div class="editable" id="footer-content"> <!-- Retained ID for JS -->
-                 <p>© <span id="current-year"></span> Skye Harvey. Mid-Century Modern Minimalist Design.</p>
-                 <!-- Basic script to update year -->
-                 <script>document.getElementById('current-year').textContent = new Date().getFullYear();</script>
-            </div>
+        <footer class="site-footer">
+             <div class="footer-content reveal fade-in">
+                 <div class="footer-logo editable" id="footer-logo-section"> <!-- Assuming logo might be editable -->
+                     Skye Harvey
+                 </div>
+                 <nav class="footer-navigation" aria-label="Footer Navigation">
+                     <ul>
+                        <li><a href="#hero-about">About</a></li>
+                        <li><a href="#portfolio">Portfolio</a></li>
+                        <li><a href="#contact">Contact</a></li>
+                        <!-- Add Privacy Policy/Terms links if needed -->
+                    </ul>
+                 </nav>
+                 <div class="footer-copyright editable" id="footer-content"> <!-- Retained ID -->
+                      <p>© <span id="current-year"></span> Skye Harvey. All rights reserved. </p>
+                 </div>
+             </div>
         </footer>
 
-    </div> <!-- / .container -->
+    </div> <!-- / .container.site-wrapper -->
 
-    <!-- Keep the image upload overlay structure if needed by your JS, but it's not directly styled here -->
+    <!-- Back to top button -->
+     <button id="back-to-top" class="btn back-to-top-btn" aria-label="Back to top">↑</button>
+
+    <!-- Keep the image upload overlay structure if needed -->
      <!-- <div class="image-upload-overlay" style="display: none;"> ... </div> -->
 
 </body>
