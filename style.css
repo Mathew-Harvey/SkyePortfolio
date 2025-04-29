@@ -1,206 +1,501 @@
-/* Basic styling */
-* {
+/* --- Global Resets & Base Styles --- */
+*,
+*::before,
+*::after {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
 }
 
-body {
-    font-family: Arial, sans-serif;
-    line-height: 1.6;
-    color: #333;
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 20px;
+:root {
+    /* Mid-Century Modern Color Palette */
+    --color-background: #F8F5F2; /* Creamy off-white */
+    --color-text: #333333;       /* Dark Grey */
+    --color-primary: #008080;    /* Teal */
+    --color-secondary: #E87A00;  /* Muted Orange */
+    --color-accent: #A0522D;     /* Sienna/Wood Tone (Subtle use) */
+    --color-border: #E0E0E0;     /* Light Grey for subtle borders */
+    --color-white: #FFFFFF;
+
+    /* Typography */
+    --font-heading: 'Montserrat', sans-serif;
+    --font-body: 'Lato', sans-serif;
+    --base-font-size: 17px; /* Slightly larger for readability */
+    --line-height-base: 1.7;
+
+    /* Spacing */
+    --spacing-unit: 1rem; /* Approx 16px */
+    --container-max-width: 1140px;
+    --container-padding: calc(var(--spacing-unit) * 1.5); /* 24px */
 }
 
-header {
+html {
+    font-size: 100%; /* Use % for better accessibility scaling */
+    scroll-behavior: smooth;
+}
+
+body {
+    font-family: var(--font-body);
+    font-size: var(--base-font-size);
+    line-height: var(--line-height-base);
+    color: var(--color-text);
+    background-color: var(--color-background);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* --- Container --- */
+.container {
+    max-width: var(--container-max-width);
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: var(--container-padding);
+    padding-right: var(--container-padding);
+}
+
+/* --- Typography --- */
+h1, h2, h3 {
+    font-family: var(--font-heading);
+    font-weight: 600;
+    line-height: 1.3;
+    margin-bottom: calc(var(--spacing-unit) * 1.5); /* 24px */
+    color: var(--color-primary); /* Use accent for headings */
+}
+
+h1 {
+    font-size: clamp(2rem, 5vw + 1rem, 3.5rem); /* Responsive font size */
+    font-weight: 700;
+    margin-bottom: var(--spacing-unit); /* Less margin after H1 */
+}
+
+h2.section-title {
+    font-size: clamp(1.5rem, 4vw + 0.5rem, 2.25rem);
+    text-transform: uppercase; /* Classic MCM touch */
+    letter-spacing: 1px;
+    text-align: center;
+    margin-bottom: calc(var(--spacing-unit) * 3); /* 48px */
+    position: relative;
+    padding-bottom: var(--spacing-unit);
+}
+
+/* Optional: Underline element for section titles */
+h2.section-title::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 60px;
+    height: 3px;
+    background-color: var(--color-secondary); /* Orange accent */
+}
+
+h3 {
+    font-size: clamp(1.2rem, 3vw + 0.5rem, 1.5rem);
+    font-weight: 600;
+    margin-bottom: calc(var(--spacing-unit) * 0.75); /* 12px */
+}
+
+p {
+    margin-bottom: var(--spacing-unit); /* 16px */
+    max-width: 65ch; /* Improve readability */
+}
+
+p:last-child {
+    margin-bottom: 0;
+}
+
+a {
+    color: var(--color-primary);
+    text-decoration: none;
+    transition: color 0.3s ease, opacity 0.3s ease;
+}
+
+a:hover, a:focus {
+    color: var(--color-secondary);
+    opacity: 0.8;
+    text-decoration: underline;
+}
+
+/* --- Header --- */
+.site-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 20px 0;
-    margin-bottom: 40px;
-    border-bottom: 1px solid #eee;
+    padding: calc(var(--spacing-unit) * 1.5) 0; /* 24px top/bottom */
+    margin-bottom: calc(var(--spacing-unit) * 4); /* 64px */
+    border-bottom: 1px solid var(--color-border);
 }
 
-h1, h2, h3 {
-    margin-bottom: 15px;
+.logo .logo-main {
+    font-family: var(--font-heading);
+    font-size: 1.5rem; /* 24px */
+    font-weight: 700;
+    color: var(--color-text);
+    display: block;
 }
 
-section {
-    margin-bottom: 40px;
+.logo .logo-sub {
+    font-size: 0.875rem; /* 14px */
+    color: var(--color-text);
+    opacity: 0.7;
+    display: block;
+    margin-top: 0.25rem; /* 4px */
 }
 
-.about-container {
+.header-buttons {
     display: flex;
-    gap: 30px;
-    align-items: center;
+    gap: calc(var(--spacing-unit) * 0.75); /* 12px */
 }
 
-#profile-pic {
-    width: 300px;
-    height: 300px;
-    object-fit: cover;
-    border-radius: 50%;
-}
-
-.projects-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 30px;
-}
-
-.project {
-    border: 1px solid #eee;
-    border-radius: 5px;
-    overflow: hidden;
-}
-
-.project-img {
-    width: 100%;
-    height: 200px;
-    object-fit: cover;
-}
-
-.project-details {
-    padding: 15px;
-}
-
-.buttons {
-    display: flex;
-    gap: 10px;
-}
-
+/* --- Buttons (General & Header Specific) --- */
 button {
-    padding: 8px 16px;
-    background-color: #007bff;
-    color: white;
-    border: none;
+    font-family: var(--font-heading);
+    font-size: 0.875rem; /* 14px */
+    font-weight: 600;
+    padding: calc(var(--spacing-unit) * 0.75) calc(var(--spacing-unit) * 1.5); /* 12px 24px */
+    border: 1px solid var(--color-primary);
     border-radius: 4px;
     cursor: pointer;
+    transition: background-color 0.3s ease, color 0.3s ease;
+    min-height: 44px; /* Ensure minimum tap target size */
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
 }
 
-button:hover {
-    background-color: #0056b3;
+/* Primary Button Style (Login/Save) */
+#login-btn, #save-btn {
+    background-color: var(--color-primary);
+    color: var(--color-white);
+}
+#login-btn:hover, #save-btn:hover {
+    background-color: darkcyan; /* Slightly darker teal */
+    border-color: darkcyan;
+}
+
+/* Secondary Button Style (Logout/Undo/Redo) */
+#logout-btn, #undo-btn, #redo-btn {
+    background-color: transparent;
+    color: var(--color-primary);
+}
+#logout-btn:hover, #undo-btn:hover, #redo-btn:hover {
+    background-color: var(--color-primary);
+    color: var(--color-white);
 }
 
 button:disabled {
     background-color: #cccccc;
+    border-color: #cccccc;
+    color: #666666;
     cursor: not-allowed;
+    opacity: 0.7;
 }
 
-footer {
-    margin-top: 60px;
-    padding-top: 20px;
-    border-top: 1px solid #eee;
+/* --- Hero / About Section --- */
+.hero-about-section {
+    display: flex;
+    align-items: center;
+    gap: calc(var(--spacing-unit) * 4); /* 64px */
+    margin-bottom: calc(var(--spacing-unit) * 6); /* 96px */
+    min-height: 60vh; /* Give it some height */
+}
+
+.hero-content {
+    flex: 1 1 60%; /* Takes up more space */
+}
+
+.about-text {
+    margin-top: calc(var(--spacing-unit) * 2); /* 32px */
+    font-size: 1.1rem; /* Slightly larger intro text */
+}
+
+.profile-image-wrapper {
+    flex: 1 0 300px; /* Fixed base width, allows shrinking */
+    max-width: 400px; /* Max size */
+    aspect-ratio: 1 / 1; /* Maintain square shape */
+}
+
+#profile-pic {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%; /* Classic circular profile pic */
+    border: 6px solid var(--color-white); /* Add a frame */
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+/* --- Portfolio Section --- */
+.portfolio-section {
+    margin-bottom: calc(var(--spacing-unit) * 6); /* 96px */
+}
+
+.projects-grid {
+    display: grid;
+    /* Responsive grid: min 300px width, max 1fr */
+    grid-template-columns: repeat(auto-fill, minmax(min(300px, 100%), 1fr));
+    gap: calc(var(--spacing-unit) * 2.5); /* 40px */
+}
+
+.project {
+    background-color: var(--color-white);
+    border-radius: 6px;
+    overflow: hidden; /* Clip image corners if needed */
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    display: flex;
+    flex-direction: column; /* Stack image and details */
+}
+
+.project:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+}
+
+.project-img-container {
+    background-color: var(--color-border); /* Placeholder bg */
+}
+
+.project-img {
+    display: block;
+    width: 100%;
+    height: auto; /* Maintain aspect ratio */
+    aspect-ratio: 3 / 2; /* Standard aspect ratio for project images */
+    object-fit: cover;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.project-details {
+    padding: calc(var(--spacing-unit) * 1.5); /* 24px */
+    flex-grow: 1; /* Allow details to fill space if needed */
+}
+
+.project-details h3 {
+    color: var(--color-text); /* Standard text color for project titles */
+}
+
+/* --- Contact Section --- */
+.contact-section {
     text-align: center;
+    margin-bottom: calc(var(--spacing-unit) * 6); /* 96px */
 }
 
-/* Edit mode styling */
+.contact-details {
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.contact-details p {
+    margin-bottom: calc(var(--spacing-unit) * 0.75); /* 12px */
+    font-size: 1.1rem;
+}
+
+.contact-label {
+    font-weight: 600;
+    color: var(--color-text);
+    margin-right: 0.5em;
+}
+
+/* --- Footer --- */
+.site-footer-bottom {
+    padding: calc(var(--spacing-unit) * 2) 0; /* 32px */
+    margin-top: calc(var(--spacing-unit) * 4); /* 64px */
+    border-top: 1px solid var(--color-border);
+    text-align: center;
+    font-size: 0.875rem; /* 14px */
+    color: var(--color-text);
+    opacity: 0.7;
+}
+
+/* --- Responsive Design --- */
+
+/* Tablet and Smaller Desktops (<= 1024px) */
+@media (max-width: 1024px) {
+    :root {
+        --base-font-size: 16px;
+    }
+
+    .container {
+        --container-padding: calc(var(--spacing-unit) * 1.25); /* 20px */
+    }
+
+    .hero-about-section {
+        gap: calc(var(--spacing-unit) * 3); /* 48px */
+        margin-bottom: calc(var(--spacing-unit) * 5); /* 80px */
+        min-height: auto; /* Remove fixed height */
+    }
+
+    .projects-grid {
+       gap: calc(var(--spacing-unit) * 2); /* 32px */
+    }
+}
+
+/* Tablet Portrait (<= 768px) */
+@media (max-width: 768px) {
+    .site-header {
+        flex-direction: column;
+        align-items: flex-start; /* Align logo left */
+        gap: var(--spacing-unit);
+        margin-bottom: calc(var(--spacing-unit) * 3); /* 48px */
+    }
+
+    .header-buttons {
+        width: 100%;
+        justify-content: flex-start; /* Align buttons left */
+        flex-wrap: wrap; /* Allow buttons to wrap */
+    }
+
+    .hero-about-section {
+        flex-direction: column-reverse; /* Stack image above text */
+        text-align: center;
+        gap: calc(var(--spacing-unit) * 2.5); /* 40px */
+    }
+
+     .hero-content {
+        flex: 1 1 auto; /* Reset flex properties */
+    }
+
+    .about-text {
+         font-size: 1rem; /* Slightly smaller on mobile */
+    }
+    .about-text p {
+        margin-left: auto;
+        margin-right: auto; /* Center paragraph text */
+    }
+
+    .profile-image-wrapper {
+        max-width: 250px; /* Smaller profile pic on mobile */
+        margin-left: auto;
+        margin-right: auto; /* Center image */
+        flex-basis: auto;
+    }
+
+    h2.section-title {
+        margin-bottom: calc(var(--spacing-unit) * 2.5); /* 40px */
+    }
+
+    .projects-grid {
+        /* Ensure single column layout by adjusting minmax */
+        grid-template-columns: repeat(auto-fill, minmax(min(280px, 100%), 1fr));
+        gap: calc(var(--spacing-unit) * 1.5); /* 24px */
+    }
+
+     .contact-details p {
+        font-size: 1rem;
+    }
+}
+
+/* Mobile (<= 480px) */
+@media (max-width: 480px) {
+    :root {
+        --container-padding: var(--spacing-unit); /* 16px */
+    }
+
+    .logo .logo-main {
+        font-size: 1.3rem;
+    }
+     .logo .logo-sub {
+        font-size: 0.8rem;
+    }
+
+    /* Ensure buttons stack nicely if needed */
+    .header-buttons {
+        gap: calc(var(--spacing-unit) * 0.5); /* 8px */
+    }
+    .header-buttons button {
+        flex-grow: 1; /* Allow buttons to take up space */
+        font-size: 0.8rem;
+        padding: calc(var(--spacing-unit) * 0.6) calc(var(--spacing-unit) * 1); /* Adjust padding */
+        min-height: 40px;
+    }
+
+     h1 {
+        /* Further reduce H1 size if needed */
+     }
+
+    .profile-image-wrapper {
+        max-width: 200px;
+    }
+
+    .project-details {
+        padding: var(--spacing-unit); /* 16px */
+    }
+     .project-details h3 {
+         font-size: 1.1rem;
+     }
+
+    .contact-details p {
+        display: flex; /* Stack label and value vertically */
+        flex-direction: column;
+        align-items: center;
+        gap: 0.25rem; /* Small gap between label and value */
+    }
+    .contact-label {
+        margin-right: 0; /* Remove margin */
+        opacity: 0.7;
+        font-size: 0.9em;
+    }
+}
+
+/* --- Edit Mode Styling (Retained & Adapted) --- */
 .edit-mode .editable {
-    border: 1px dashed #ccc;
-    padding: 10px;
-    margin: 5px 0;
-    background-color: rgba(255, 255, 0, 0.05);
+    border: 1px dashed var(--color-secondary); /* Use secondary color for edit indicator */
+    padding: 5px; /* Minimal padding */
+    margin: 2px 0; /* Minimal margin */
+    background-color: rgba(232, 122, 0, 0.05); /* Faint orange background */
+    cursor: text;
 }
 
+.edit-mode [contenteditable="true"]:focus {
+    outline: 2px solid var(--color-primary); /* Teal focus outline */
+    box-shadow: 0 0 5px rgba(0, 128, 128, 0.3);
+}
+
+/* Keep image editing indicators subtle */
 .edit-mode .project-img-container,
-.edit-mode #profile-pic-container {
+.edit-mode .profile-image-wrapper {
     position: relative;
     cursor: pointer;
 }
 
 .edit-mode .project-img-container::after,
-.edit-mode #profile-pic-container::after {
-    content: "Click or drag & drop to replace";
+.edit-mode .profile-image-wrapper::after {
+    content: "Replace Image";
     position: absolute;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    background: rgba(0, 0, 0, 0.7);
+    background: rgba(0, 0, 0, 0.6);
     color: white;
-    padding: 10px;
+    padding: 8px 12px;
     border-radius: 4px;
-    font-size: 14px;
+    font-size: 13px;
+    font-family: var(--font-body);
     opacity: 0;
-    transition: opacity 0.3s;
+    transition: opacity 0.3s ease;
+    pointer-events: none; /* Allow clicks through to the container */
+    z-index: 10;
+    text-align: center;
 }
 
 .edit-mode .project-img-container:hover::after,
-.edit-mode #profile-pic-container:hover::after {
+.edit-mode .profile-image-wrapper:hover::after {
     opacity: 1;
 }
 
+/* Style for images pending upload */
 .edit-mode img[data-pending-upload="true"] {
-    border: 3px solid #5cb85c;
-    box-shadow: 0 0 10px rgba(92, 184, 92, 0.5);
+    outline: 3px solid var(--color-secondary);
+    outline-offset: 2px;
 }
 
+/* --- Image Upload Overlay (Basic Styling if needed) --- */
+/* Add basic styles for .image-upload-overlay etc. if they are used by your JS */
+/* Example: */
+/*
 .image-upload-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.7);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
+    position: fixed; ... etc
 }
-
-.image-upload-container {
-    background-color: white;
-    padding: 20px;
-    border-radius: 5px;
-    max-width: 500px;
-    width: 90%;
-}
-
-.image-upload-container h3 {
-    margin-top: 0;
-    margin-bottom: 20px;
-}
-
-.image-upload-container .buttons {
-    margin-top: 20px;
-    justify-content: flex-end;
-}
-
-.file-input-wrapper {
-    position: relative;
-    overflow: hidden;
-    display: inline-block;
-    margin-bottom: 20px;
-}
-
-.file-input-wrapper input[type="file"] {
-    font-size: 100px;
-    position: absolute;
-    left: 0;
-    top: 0;
-    opacity: 0;
-    cursor: pointer;
-}
-
-.file-input-wrapper .file-button {
-    display: inline-block;
-    padding: 8px 16px;
-    background-color: #6c757d;
-    color: white;
-    border-radius: 4px;
-    cursor: pointer;
-}
-
-.file-input-wrapper .file-label {
-    margin-left: 10px;
-    font-style: italic;
-    color: #6c757d;
-}
-
-.image-preview {
-    max-width: 100%;
-    max-height: 300px;
-    margin: 10px 0;
-    display: block;
-}
+*/
