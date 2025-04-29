@@ -174,12 +174,14 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     const loginBtn = document.getElementById('login-btn');
-    const commitBtn = document.getElementById('commit-btn');
+    const saveBtn = document.getElementById('save-btn');
+    const logoutBtn = document.getElementById('logout-btn');
     const undoBtn = document.getElementById('undo-btn');
     const redoBtn = document.getElementById('redo-btn');
     
     loginBtn.addEventListener('click', login);
-    commitBtn.addEventListener('click', commitChanges);
+    saveBtn.addEventListener('click', saveChanges);
+    logoutBtn.addEventListener('click', logout);
     undoBtn.addEventListener('click', undoChanges);
     redoBtn.addEventListener('click', redoChanges);
 
@@ -240,7 +242,8 @@ document.addEventListener('DOMContentLoaded', function() {
         setupDragAndDrop();
         setupImageClickHandlers();
         
-        commitBtn.style.display = 'block';
+        saveBtn.style.display = 'block';
+        logoutBtn.style.display = 'block';
         undoBtn.style.display = 'block';
         redoBtn.style.display = 'block';
         
@@ -253,8 +256,16 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function updateUndoRedoButtons() {
-        undoBtn.disabled = versionHistory.length === 0 || currentVersionIndex >= versionHistory.length - 1;
+        if (versionHistory.length === 0) {
+            undoBtn.disabled = true;
+            redoBtn.disabled = true;
+            return;
+        }
+        
+        undoBtn.disabled = currentVersionIndex >= versionHistory.length - 1;
         redoBtn.disabled = currentVersionIndex <= 0;
+        
+        console.log(`Undo/Redo state: History length=${versionHistory.length}, Current index=${currentVersionIndex}`);
     }
 
     function setupDragAndDrop() {
@@ -282,16 +293,20 @@ document.addEventListener('DOMContentLoaded', function() {
         const profilePicContainer = document.getElementById('profile-pic-container');
         const profilePic = document.getElementById('profile-pic');
         
-        profilePicContainer.addEventListener('click', function() {
+        profilePicContainer.addEventListener('click', function(e) {
             if (isLoggedIn) {
+                e.preventDefault();
+                e.stopPropagation();
                 showImageUploadDialog(profilePic);
             }
         });
         
         const projectImgContainers = document.querySelectorAll('.project-img-container');
         projectImgContainers.forEach(container => {
-            container.addEventListener('click', function() {
+            container.addEventListener('click', function(e) {
                 if (isLoggedIn) {
+                    e.preventDefault();
+                    e.stopPropagation();
                     const img = container.querySelector('.project-img');
                     showImageUploadDialog(img);
                 }
@@ -302,17 +317,35 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     function showImageUploadDialog(imgElement) {
+        // Create file input element
         const fileInput = document.createElement('input');
         fileInput.type = 'file';
         fileInput.accept = 'image/*';
+        fileInput.style.display = 'none';
+        document.body.appendChild(fileInput);
         
         fileInput.onchange = function(e) {
             const file = e.target.files[0];
-            if (!file) return;
-            
-            handleImageFile(file, imgElement);
+            if (file) {
+                handleImageFile(file, imgElement);
+            }
+            // Remove the file input after selection
+            document.body.removeChild(fileInput);
         };
         
+        // Handle cancel case
+        fileInput.oncancel = function() {
+            document.body.removeChild(fileInput);
+        };
+        
+        // Add cleanup listener to ensure it's removed
+        window.setTimeout(() => {
+            if (document.body.contains(fileInput)) {
+                document.body.removeChild(fileInput);
+            }
+        }, 5000); // 5 second timeout as a fallback
+        
+        // Open file selection dialog
         fileInput.click();
     }
     
@@ -391,6 +424,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     function handleImageDrop(e, imgElement) {
         e.preventDefault();
+        e.stopPropagation();
         
         if (!isLoggedIn) return;
         
@@ -404,25 +438,39 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     async function undoChanges() {
-        if (!isLoggedIn || versionHistory.length === 0) return;
+        if (!isLoggedIn) return;
+        
+        // Check if we have any versions in history
+        if (versionHistory.length === 0) {
+            alert("No previous versions available to undo to.");
+            return;
+        }
         
         try {
             let versionToLoad;
             
+            // First undo after page load
             if (currentVersionIndex === -1) {
                 versionToLoad = versionHistory[0];
                 currentVersionIndex = 0;
-            } else if (currentVersionIndex < versionHistory.length - 1) {
+            } 
+            // Check if we can go back further in history
+            else if (currentVersionIndex < versionHistory.length - 1) {
                 currentVersionIndex++;
                 versionToLoad = versionHistory[currentVersionIndex];
-            } else {
-                alert("No more versions to undo to!");
+            } 
+            // No more versions to undo to
+            else {
+                alert("You've reached the oldest version. No more changes to undo.");
                 return;
             }
+            
+            console.log(`Undoing to version index ${currentVersionIndex} of ${versionHistory.length - 1}`);
             
             undoBtn.textContent = 'Loading...';
             undoBtn.disabled = true;
             
+            // Try to load the version content
             const contentResponse = await fetch(versionToLoad.download_url);
             if (!contentResponse.ok) {
                 throw new Error(`Failed to load version: ${contentResponse.statusText}`);
@@ -430,6 +478,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
             const versionContent = await contentResponse.text();
             
+            // On first undo, save current state for potential redo
             if (!isUndoOperation) {
                 const currentHTML = document.documentElement.outerHTML;
                 
@@ -440,10 +489,13 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             
             isUndoOperation = true;
+            
+            // Replace page content with the loaded version
             document.open();
             document.write(versionContent);
             document.close();
             
+            // This will reinitialize the page's JS
             console.log(`Reverted to version: ${versionToLoad.name}`);
         } catch (error) {
             console.error('Error during undo operation:', error);
@@ -451,22 +503,36 @@ document.addEventListener('DOMContentLoaded', function() {
             
             undoBtn.textContent = 'Undo';
             undoBtn.disabled = false;
+            updateUndoRedoButtons();
         }
     }
 
     async function redoChanges() {
-        if (!isLoggedIn || versionHistory.length === 0 || currentVersionIndex <= 0) {
-            alert("No more versions to redo to!");
+        if (!isLoggedIn) return;
+        
+        // Check if we have any versions in history
+        if (versionHistory.length === 0) {
+            alert("No version history available for redo operations.");
+            return;
+        }
+        
+        // Check if we're already at the most recent version
+        if (currentVersionIndex <= 0) {
+            alert("You're already at the most recent version. No changes to redo.");
             return;
         }
         
         try {
+            // Move toward more recent versions
             currentVersionIndex--;
             const versionToLoad = versionHistory[currentVersionIndex];
+            
+            console.log(`Redoing to version index ${currentVersionIndex} of ${versionHistory.length - 1}`);
             
             redoBtn.textContent = 'Loading...';
             redoBtn.disabled = true;
             
+            // Try to load the version content
             const contentResponse = await fetch(versionToLoad.download_url);
             if (!contentResponse.ok) {
                 throw new Error(`Failed to load version: ${contentResponse.statusText}`);
@@ -474,10 +540,12 @@ document.addEventListener('DOMContentLoaded', function() {
             
             const versionContent = await contentResponse.text();
             
+            // Replace page content with the loaded version
             document.open();
             document.write(versionContent);
             document.close();
             
+            // This will reinitialize the page's JS
             console.log(`Redone to version: ${versionToLoad.name}`);
         } catch (error) {
             console.error('Error during redo operation:', error);
@@ -485,15 +553,16 @@ document.addEventListener('DOMContentLoaded', function() {
             
             redoBtn.textContent = 'Redo';
             redoBtn.disabled = false;
+            updateUndoRedoButtons();
         }
     }
 
-    async function commitChanges() {
+    async function saveChanges() {
         if (!isLoggedIn) return;
         
         try {
-            commitBtn.textContent = 'Committing...';
-            commitBtn.disabled = true;
+            saveBtn.textContent = 'Saving...';
+            saveBtn.disabled = true;
             
             // First, make sure the images directory exists
             await createImagesDirectory();
@@ -509,21 +578,23 @@ document.addEventListener('DOMContentLoaded', function() {
             
             await uploadAllFiles(currentHTML);
             
-            // Clear pending uploads after successful commit
+            // Clear pending uploads after successful save
             clearPendingUploads(imagesToUpload);
             
-            commitBtn.textContent = 'Commit Changes';
-            commitBtn.disabled = false;
-            alert('Changes committed and pushed successfully!');
+            // Reset undo/redo index to point to the most recent version
+            currentVersionIndex = 0;
+            updateUndoRedoButtons();
             
-            logout();
+            saveBtn.textContent = 'Save Changes';
+            saveBtn.disabled = false;
+            alert('Changes saved successfully!');
             
         } catch (error) {
-            console.error('Error committing changes:', error);
+            console.error('Error saving changes:', error);
             
-            commitBtn.textContent = 'Commit Changes';
-            commitBtn.disabled = false;
-            alert('Error committing changes: ' + error.message);
+            saveBtn.textContent = 'Save Changes';
+            saveBtn.disabled = false;
+            alert('Error saving changes: ' + error.message);
         }
     }
     
@@ -644,7 +715,8 @@ document.addEventListener('DOMContentLoaded', function() {
             el.removeAttribute('contenteditable');
         });
         
-        commitBtn.style.display = 'none';
+        saveBtn.style.display = 'none';
+        logoutBtn.style.display = 'none';
         undoBtn.style.display = 'none';
         redoBtn.style.display = 'none';
         
@@ -694,6 +766,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }
             
+            // Reload version history after save to include the new backup
             await initVersionHistory();
             
             return true;
